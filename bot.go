@@ -8,30 +8,16 @@ import (
 	"os/signal"
 	"regexp"
 	"strings"
+	"plugin"
 
-	"github.com/gorilla/mux"
+	"github.com/fkr/mbothelper"
+//	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 	"github.com/mattermost/platform/model"
 	"log"
 	"fmt"
-	"net/http"
+//	"net/http"
 )
-
-type BotConfig struct {
-	MattermostServer string
-	MattermostWSURL string
-	Listen string
-	BotName string
-	UserEmail string
-	UserName string
-	UserPassword string
-	UserLastname string
-	UserFirstname string
-	TeamName string
-	LogChannel string
-	MainChannel string
-	StatusChannel string
-}
 
 var client *model.Client4
 var webSocketClient *model.WebSocketClient
@@ -42,7 +28,11 @@ var debuggingChannel *model.Channel
 var mainChannel *model.Channel
 var statusChannel *model.Channel
 
-var config BotConfig
+var config mbothelper.BotConfig
+
+type SipHandler interface {
+
+}
 
 // Documentation for the Go driver can be found
 // at https://godoc.org/github.com/mattermost/platform/model#Client
@@ -79,13 +69,39 @@ func main() {
 		    config.Listen)
 	}
 
+	// load module
+	// 1. open the so file to load the symbols
+	plug, err := plugin.Open("rtcrm-plugin.so")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// 2. look up a symbol (an exported function or variable)
+	// in this case, variable Greeter
+	pluginHandler, err := plug.Lookup("HandleChannelMessage")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// 2. look up a symbol (an exported function or variable)
+	// in this case, variable Greeter
+	pluginHandlerSetChannels, err := plug.Lookup("SetChannelsAndClient")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// 2. look up a symbol (an exported function or variable)
+	// in this case, variable Greeter
+	//pathPattern, err := plug.Lookup("PathPattern")
+	//if err != nil {
+	//	fmt.Println(err)
+	//	os.Exit(1)
+	//}
 
 	SetupGracefulShutdown()
-
-	router := mux.NewRouter()
-	router.HandleFunc("/sip/{action}/{user}/{number}", HandleSip)
-	go func() { log.Fatal(http.ListenAndServe(config.Listen, router))}()
-
 
 	client = model.NewAPIv4Client(config.MattermostServer)
 
@@ -126,75 +142,26 @@ func main() {
 
 	webSocketClient.Listen()
 
+	//pluginHandlerSetChannels.(func(string, string, *model.Client4))(mainChannel.Id, statusChannel.Id,client)
+	pluginHandlerSetChannels.(func(string, *model.Client4))(debuggingChannel.Id,client)
+
+	//router := mux.NewRouter()
+	//router.HandleFunc(*pathPattern.(*string), pluginHandler.(func(http.ResponseWriter, *http.Request)))
+	//go func() { log.Fatal(http.ListenAndServe(config.Listen, router))}()
+
+
+
 	go func() {
 		for {
 			select {
 			case resp := <-webSocketClient.EventChannel:
-				HandleWebSocketResponse(resp)
+				HandleWebSocketResponse(resp, pluginHandler)
 			}
 		}
 	}()
 
 	// You can block forever with
 	select {}
-}
-
-func HandleSip(rw http.ResponseWriter, req *http.Request) {
-
-	log.Printf("Request from: %s", req.RemoteAddr)
-
-	// /offhock/fkr
-	vars := mux.Vars(req)
-	action := vars["action"]
-	user := vars["user"]
-
-	var text string
-	var channel string
-
-	switch action {
-	case "offhook":
-		text = fmt.Sprintf("%s CONNECTED", user)
-		channel = statusChannel.Id
-	case "onhook":
-		text = fmt.Sprintf("%s DISCONNECTED", user)
-		channel = statusChannel.Id
-	case "dnd-on":
-		text = fmt.Sprintf("%s DND", user)
-		channel = statusChannel.Id
-	case "dnd-off":
-		text = fmt.Sprintf("%s available", user)
-		channel = statusChannel.Id
-	case "paused-on":
-		text = fmt.Sprintf("%s paused", user)
-		channel = statusChannel.Id
-	case "paused-off":
-		text = fmt.Sprintf("%s is back", user)
-		channel = statusChannel.Id
-	case "login":
-		text = fmt.Sprintf("%s logged on", user)
-		channel = statusChannel.Id
-	case "logout":
-		text = fmt.Sprintf("%s logged out", user)
-		channel = statusChannel.Id
-	case "agent-login":
-		text = fmt.Sprintf("%s logged in", user)
-		channel = statusChannel.Id
-	case "agent-logout":
-		text = fmt.Sprintf("%s logged out", user)
-		channel = statusChannel.Id
-	case "incoming-call":
-		number := vars["number"]
-		text = fmt.Sprintf("Incoming call for %s from %s", user, number)
-		channel = mainChannel.Id
-	case "incoming-conf":
-		number := vars["number"]
-		text = fmt.Sprintf("Incoming call for conference %s from %s", user, number)
-		channel = mainChannel.Id
-	}
-
-	SendMsgToChannel(text, "", channel)
-
-	fmt.Fprintln(rw, string(""))
 }
 
 func MakeSureServerIsRunning() {
@@ -315,8 +282,9 @@ func SendMsgToDebuggingChannel(msg string, replyToId string) {
 	}
 }
 
-func HandleWebSocketResponse(event *model.WebSocketEvent) {
-	HandleMsgFromDebuggingChannel(event)
+func HandleWebSocketResponse(event *model.WebSocketEvent, pluginHandler plugin.Symbol) {
+	pluginHandler.(func(socketEvent *model.WebSocketEvent))(event)
+//	HandleMsgFromDebuggingChannel(event)
 }
 
 func HandleMsgFromDebuggingChannel(event *model.WebSocketEvent) {
