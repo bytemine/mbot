@@ -25,10 +25,6 @@ var statusChannel *model.Channel
 
 var config mbothelper.BotConfig
 
-type SipHandler interface {
-
-}
-
 // Documentation for the Go driver can be found
 // at https://godoc.org/github.com/mattermost/platform/model#Client
 func main() {
