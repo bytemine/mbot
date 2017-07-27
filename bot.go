@@ -8,7 +8,7 @@ import (
 	"plugin"
 
 	"fmt"
-	"github.com/fkr/mbothelper"
+	"github.com/bytemine/mbothelper"
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
 	"log"
