@@ -7,11 +7,11 @@ import (
 	"os"
 	"plugin"
 
-	"github.com/fkr/mbothelper"
-	"github.com/spf13/viper"
-	"github.com/mattermost/platform/model"
-	"log"
 	"fmt"
+	"github.com/fkr/mbothelper"
+	"github.com/mattermost/platform/model"
+	"github.com/spf13/viper"
+	"log"
 )
 
 var client *model.Client4
@@ -38,8 +38,8 @@ func main() {
 	} else {
 		config.MattermostServer = viper.GetString("general.mattermost")
 		config.MattermostWSURL = viper.GetString("general.wsurl")
-		config.Listen     = viper.GetString("general.listen")
-		config.BotName  = viper.GetString("general.botname")
+		config.Listen = viper.GetString("general.listen")
+		config.BotName = viper.GetString("general.botname")
 		config.UserEmail = viper.GetString("general.useremail")
 		config.UserName = viper.GetString("general.username")
 		config.UserPassword = viper.GetString("general.userpassword")
@@ -50,14 +50,14 @@ func main() {
 		config.MainChannel = viper.GetString("channel.main")
 		config.StatusChannel = viper.GetString("channel.status")
 
-		fmt.Printf("\nUsing config:\n mattermost = %s\n" +
-			"Log Channel = %s\n" +
-			"username = %s\n" +
+		fmt.Printf("\nUsing config:\n mattermost = %s\n"+
+			"Log Channel = %s\n"+
+			"username = %s\n"+
 			"Listening on port: %s\n",
 			config.MattermostServer,
 			config.LogChannel,
 			config.UserName,
-		    config.Listen)
+			config.Listen)
 	}
 
 	// load module
@@ -136,13 +136,11 @@ func main() {
 	webSocketClient.Listen()
 
 	//pluginHandlerSetChannels.(func(string, string, *model.Client4))(mainChannel.Id, statusChannel.Id,client)
-	pluginHandlerSetChannels.(func(string, *model.Client4))(debuggingChannel.Id,client)
+	pluginHandlerSetChannels.(func(string, *model.Client4))(debuggingChannel.Id, client)
 
 	//router := mux.NewRouter()
 	//router.HandleFunc(*pathPattern.(*string), pluginHandler.(func(http.ResponseWriter, *http.Request)))
 	//go func() { log.Fatal(http.ListenAndServe(config.Listen, router))}()
-
-
 
 	go func() {
 		for {
@@ -159,5 +157,5 @@ func main() {
 
 func HandleWebSocketResponse(event *model.WebSocketEvent, pluginHandler plugin.Symbol) {
 	pluginHandler.(func(socketEvent *model.WebSocketEvent))(event)
-//	HandleMsgFromDebuggingChannel(event)
+	//	HandleMsgFromDebuggingChannel(event)
 }
