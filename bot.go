@@ -52,11 +52,12 @@ func main() {
 
 		fmt.Printf("\nUsing config:\n mattermost = %s\n"+
 			"Log Channel = %s\n"+
-			"username = %s\n"+
+			"username = :%s:\npassword = :%s:\n"+
 			"Listening on port: %s\n",
 			config.MattermostServer,
 			config.LogChannel,
 			config.UserName,
+            config.UserPassword,
 			config.Listen)
 	}
 
@@ -96,7 +97,7 @@ func main() {
 
 	client = model.NewAPIv4Client(config.MattermostServer)
 
-	mbothelper.SetClient(client)
+	mbothelper.InitMbotHelper(config, client)
 
 	// Lets test to see if the mattermost server is up and running
 	mbothelper.MakeSureServerIsRunning()
@@ -121,10 +122,8 @@ func main() {
 	mbothelper.SendMsgToDebuggingChannel("_"+config.BotName+" has **started** running_", "")
 
 	// Join to main channel
-	mbothelper.JoinMainChannel()
-
-	// Join statuschannel
-	mbothelper.JoinStatusChannel()
+	mainChannel = mbothelper.JoinChannel(config.MainChannel, mbothelper.BotTeam.Id)
+	statusChannel = mbothelper.JoinChannel(config.StatusChannel, mbothelper.BotTeam.Id)
 
 	// Lets start listening to some channels via the websocket!
 	webSocketClient, err := model.NewWebSocketClient(config.MattermostWSURL, client.AuthToken)
@@ -136,7 +135,7 @@ func main() {
 	webSocketClient.Listen()
 
 	//pluginHandlerSetChannels.(func(string, string, *model.Client4))(mainChannel.Id, statusChannel.Id,client)
-	pluginHandlerSetChannels.(func(string, *model.Client4))(debuggingChannel.Id, client)
+	pluginHandlerSetChannels.(func(string, *model.Client4))(mbothelper.DebuggingChannel.Id, client)
 
 	//router := mux.NewRouter()
 	//router.HandleFunc(*pathPattern.(*string), pluginHandler.(func(http.ResponseWriter, *http.Request)))
