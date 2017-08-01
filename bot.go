@@ -31,7 +31,7 @@ var config mbothelper.BotConfig
 // at https://godoc.org/github.com/mattermost/platform/model#Client
 func main() {
 
-	viper.SetConfigName("app")
+	viper.SetConfigName("bot")
 	viper.AddConfigPath("config")
 
 	err := viper.ReadInConfig()
