@@ -124,7 +124,9 @@ func main() {
 
 		keyType    := fmt.Sprintf("%s.type", openPlugin)
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
-		pluginConfig := mbothelper.BotConfigPlugin{openPlugin, viper.GetString(keyType), viper.GetString(keyHandler) }
+		pathHandler := fmt.Sprintf("%s.PathHandler", openPlugin)
+		pluginConfig := mbothelper.BotConfigPlugin{openPlugin, viper.GetString(keyType),
+							                 viper.GetString(keyHandler), viper.GetStringSlice(pathHandler)}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
@@ -147,13 +149,9 @@ func main() {
 		if pluginConfig.PluginType == "handler" {
 			// 2. look up a symbol (an exported function or variable)
 			// in this case, variable Greeter
-			pathPattern, err := plug.Lookup("PathPattern")
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+			for _, pathHandlerS := range pluginConfig.PathHandler {
+				router.HandleFunc(pathHandlerS, pluginHandler.(func(http.ResponseWriter, *http.Request)))
 			}
-
-			router.HandleFunc(*pathPattern.(*string), pluginHandler.(func(http.ResponseWriter, *http.Request)))
 			go func() { log.Fatal(http.ListenAndServe(config.Listen, router))}()
 		}
 
