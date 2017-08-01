@@ -79,7 +79,7 @@ func main() {
 	// You can get this token with client.AuthToken
 	mbothelper.LoginAsTheBotUser()
 
-	// If the bot user doesn't have the correct information lets update his profile
+	// If the bot user doesn't have the co	rrect information lets update his profile
 	mbothelper.UpdateTheBotUserIfNeeded()
 
 	// Lets find our bot team
@@ -124,9 +124,16 @@ func main() {
 
 		keyType := fmt.Sprintf("%s.type", openPlugin)
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
-		pathHandler := fmt.Sprintf("%s.PathHandler", openPlugin)
+		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
+		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
+
+		pluginConfigFileName := ""
+		if(viper.IsSet(pluginConfigFile)) {
+			pluginConfigFileName = viper.GetString(pluginConfigFile)
+		}
+
 		pluginConfig := mbothelper.BotConfigPlugin{openPlugin, viper.GetString(keyType),
-			viper.GetString(keyHandler), viper.GetStringSlice(pathHandler)}
+			viper.GetString(keyHandler), viper.GetStringSlice(pathPatterns),pluginConfigFileName}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
@@ -138,19 +145,28 @@ func main() {
 			os.Exit(1)
 		}
 
-		// 2. look up a symbol (an exported function or variable)
-		// in this case, variable Greeter
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
+		// if we have a configured config file for the plugin load it
+		if pluginConfigFileName != "" {
+			pluginConfigHandler, err := plug.Lookup("LoadConfig")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			pluginConfigHandler.(func (string))(pluginConfigFileName)
+		}
+
 		if pluginConfig.PluginType == "handler" {
-			// 2. look up a symbol (an exported function or variable)
-			// in this case, variable Greeter
-			for _, pathHandlerS := range pluginConfig.PathHandler {
-				router.HandleFunc(pathHandlerS, pluginHandler.(func(http.ResponseWriter, *http.Request)))
+			for _, pathPattern := range pluginConfig.PathPatterns {
+				msg := fmt.Sprintf("Setting up routing for %s", pathPattern)
+				mbothelper.SendMsgToDebuggingChannel(msg, "")
+				router.HandleFunc(pathPattern, pluginHandler.(func(http.ResponseWriter, *http.Request)))
 			}
 			go func() { log.Fatal(http.ListenAndServe(config.Listen, router)) }()
 		}
