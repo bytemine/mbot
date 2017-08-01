@@ -1,5 +1,12 @@
-// Copyright (c) 2016 Mattermost, Inc. All Rights Reserved.
-// See License.txt for license information.
+/*************************************************************************
+ * Written by / Copyright (C) 2017 bytemine GmbH                          *
+ * Author: Felix Kronlage                   E-Mail: kronlage@bytemine.net *
+ *                                                                        *
+ * http://www.bytemine.net/                                               *
+ *************************************************************************/
+
+// this source was initially based on the mattermost sample bot
+// https://github.com/mattermost/mattermost-bot-sample-golang
 
 package main
 
@@ -27,10 +34,9 @@ var statusChannel *model.Channel
 
 var config mbothelper.BotConfig
 
-// Documentation for the Go driver can be found
-// at https://godoc.org/github.com/mattermost/platform/model#Client
 func main() {
 
+	// look in config/bot.toml for the config
 	viper.SetConfigName("bot")
 	viper.AddConfigPath("config")
 
@@ -65,6 +71,7 @@ func main() {
 			config.Listen)
 	}
 
+	// make sure we exit cleanly upon ctrl-c
 	mbothelper.SetupGracefulShutdown()
 
 	client = model.NewAPIv4Client(config.MattermostServer)
@@ -85,16 +92,14 @@ func main() {
 	// Lets find our bot team
 	mbothelper.FindBotTeam()
 
-	// This is an important step.  Lets make sure we use the botTeam
-	// for all future web service requests that require a team.
-	//client.SetTeamId(botTeam.Id)
-
 	// Lets create a bot channel for logging debug messages into
 	mbothelper.CreateBotDebuggingChannelIfNeeded()
 	mbothelper.SendMsgToDebuggingChannel("_"+config.BotName+" has **started** running_", "")
 
-	// Join to main channel
+	// Join to main channel...
 	mbothelper.MainChannel = mbothelper.JoinChannel(config.MainChannel, mbothelper.BotTeam.Id)
+
+	// ...and our status channel
 	mbothelper.StatusChannel = mbothelper.JoinChannel(config.StatusChannel, mbothelper.BotTeam.Id)
 
 	// Lets start listening to some channels via the websocket!
@@ -125,23 +130,41 @@ func main() {
 		keyType := fmt.Sprintf("%s.type", openPlugin)
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
+		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
+
+		pluginConfigFileName := ""
+		if(viper.IsSet(pluginConfigFile)) {
+			pluginConfigFileName = viper.GetString(pluginConfigFile)
+		}
+
 		pluginConfig := mbothelper.BotConfigPlugin{openPlugin, viper.GetString(keyType),
-			viper.GetString(keyHandler), viper.GetStringSlice(pathPatterns)}
+			viper.GetString(keyHandler), viper.GetStringSlice(pathPatterns),pluginConfigFileName}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
 		// 2. look up a symbol (an exported function or variable)
-		// in this case, variable Greeter
 		pluginHandler, err := plug.Lookup(pluginConfig.Handler)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
+		// 3. we always have a set channels function
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
+		}
+
+		// if we have a configured config file for the plugin load it
+		if pluginConfigFileName != "" {
+			pluginConfigHandler, err := plug.Lookup("LoadConfig")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			pluginConfigHandler.(func (string))(pluginConfigFileName)
 		}
 
 		if pluginConfig.PluginType == "handler" {
@@ -174,5 +197,4 @@ func main() {
 
 func HandleWebSocketResponse(event *model.WebSocketEvent, pluginHandler plugin.Symbol) {
 	pluginHandler.(func(socketEvent *model.WebSocketEvent))(event)
-	//	HandleMsgFromDebuggingChannel(event)
 }
