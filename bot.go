@@ -4,9 +4,9 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"plugin"
-	"net/http"
 
 	"fmt"
 	"github.com/bytemine/mbothelper"
@@ -61,7 +61,7 @@ func main() {
 			config.MattermostServer,
 			config.LogChannel,
 			config.UserName,
-            config.UserPassword,
+			config.UserPassword,
 			config.Listen)
 	}
 
@@ -122,11 +122,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		keyType    := fmt.Sprintf("%s.type", openPlugin)
+		keyType := fmt.Sprintf("%s.type", openPlugin)
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
 		pathHandler := fmt.Sprintf("%s.PathHandler", openPlugin)
 		pluginConfig := mbothelper.BotConfigPlugin{openPlugin, viper.GetString(keyType),
-							                 viper.GetString(keyHandler), viper.GetStringSlice(pathHandler)}
+			viper.GetString(keyHandler), viper.GetStringSlice(pathHandler)}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
@@ -152,7 +152,7 @@ func main() {
 			for _, pathHandlerS := range pluginConfig.PathHandler {
 				router.HandleFunc(pathHandlerS, pluginHandler.(func(http.ResponseWriter, *http.Request)))
 			}
-			go func() { log.Fatal(http.ListenAndServe(config.Listen, router))}()
+			go func() { log.Fatal(http.ListenAndServe(config.Listen, router)) }()
 		}
 
 		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
