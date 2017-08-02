@@ -1,70 +1,78 @@
-# Mattermost Bot Sample
+# mbot
 
-## Overview
+This is mbot. A simple and fun way to interact with mattermost.
 
-This sample Bot shows how to use the Mattermost [Go driver](https://github.com/mattermost/platform/blob/master/model/client.go) to interact with a Mattermost server, listen to events and respond to messages. Documentation for the Go driver can be found [here](https://godoc.org/github.com/mattermost/platform/model#Client).
+## mattermost bot - simple framework
 
-Highlights of APIs used in this sample:
- - Log in to the Mattermost server
- - Create a channel
- - Modify user attributes 
- - Connect and listen to WebSocket events for real-time responses to messages
- - Post a message to a channel
+This is a small framework to interact with mattermost. The bot itself won't
+do anything it needs plugins.
 
-## Setup Server Environment
+## Configuration
 
-1 - [Install](http://docs.mattermost.com/install/requirements.html) or [upgrade](https://docs.mattermost.com/administration/upgrade.html) to Mattermost server version 3.10+, and verify that the Mattermost server is running on [http://localhost:8065](http://localhost:8065). 
+`mbot` is configured through ``config/bot.toml``. `mbot` loads plugins.
+Plugins are either _handler_ or _watcher_. _handler_ react to http requests and post
+to channels, _watcher_ observe a channel and react to stuff written there.
 
-This Bot Sample was tested with Mattermost server version 3.10.0.
+### General section
 
-2 - Create a team for the Bot to run. If you have an existing team, you may skip this step and replace `team_name` with your existing team in subsequent steps.
 ```
-./bin/platform team create --name botsample --display_name "Sample Bot playground" --email "admin@example.com"
+[general]
+mattermost = "https://mattermost.bytemine.net"
+wsurl = "wss://mattermost.bytemine.net:443"
+listen = ":5020"
+botname = "James"
+useremail = "support@bytemine.net"
+username = "james"
+userpassword = "choo7Ohk5cohDeu"
+userlastname = "Sophie"
+userfirstname = "James"
+teamname = "bytemine"
+plugins_directory = "plugins/"
+plugins = "rtcrmapi_plugin.so sip_plugin.so"
 ```
-3 - Create the user account the Bot will run as.
-```
-./bin/platform user create --email="bot@example.com" --password="password1" --username="samplebot"
-```
-4 - Create a second user, `bill`, which we will use to log in and interact with the Bot.
-```
-./bin/platform user create --email="bill@example.com" --password="password1" --username="bill"
-```
-5 - (Optional) Give `bill` `system_admin` permissions.
-```
-./bin/platform roles system_admin bill
-```
-6 - Add users to the team
-```
-./bin/platform team add botsample samplebot bill
-```
-7 - Log in to [http://localhost:8065](http://localhost:8065) as `samplebot` and verify the e-mail address.
-8 - Log in to [http://localhost:8065](http://localhost:8065) as `bill` and verify the account was created successfully. Then, navigate to the `botsample` team you created in step 2 to interact with the Bot.
 
-## Setup Bot Development Environment
+Most items are self-explanatory, the channels are define in their own section
+just as the `plugins` settings defines the shared objects to load.
 
-1 - Follow the [Developer Machine Setup](https://docs.mattermost.com/developer/dev-setup.html) instructions to setup the bot development environment.
-
-2 - Clone the GitHub repository to run the sample.
 ```
-git clone https://github.com/mattermost/mattermost-bot-sample-golang.git
-cd mattermost-bot-sample-golang
+[channel]
+main = "town-square"
+log = "debug"
+status  = "status"
 ```
-3 - Start the Bot.
+
+Each shared object has its own cateogory:
+
 ```
-make run
+[sip_plugin.so]
+type = "handler"
+handler = "HandleRequest"
+path_patterns = "/sip/{action}/{user}/{number} /sip/{action}/{user}"
+plugin_confog = "sip_plugin.toml"
 ```
-You can verify the Bot is running when 
-  - `Server detected and is running version 3.X.X` appears on the command line.
-  - `Mattermost Bot Sample has started running` is posted in the `Debugging For Sample Bot` channel.
 
-## Test the Bot
+## Functions
 
-1 - Log in to the Mattermost server as `bill@example.com` and `password1.`
+An `mbot`-plugin implemennts the following functions:
 
-2 - Join the `Debugging For Sample Bot` channel.
+* The handler - referenced in the `handler`-setting in each plugin configuration setting.
 
-3 - Post a message in the channel such as `are you running?` to see if the Bot responds. You should see a response similar to `Yes I'm running` if the Bot is running.
+### All Plugins
 
-## Stop the Bot
+* LoadConfig(configFile string)
+* SetChannels(mChannelIdString string, sChannelIdString string, dChannelIdString string)
 
-1 - In the terminal window, press `CTRL+C` to stop the bot. You should see `Mattermost Bot Sample has stopped running` posted in the `Debugging For Sample Bot` channel.
+### _handler_
+
+* HandleRequest(rw http.ResponseWriter, req *http.Request)
+
+### _watcher_
+
+* HandleChannelMessage(event *model.WebSocketEvent)
+
+### Loading configs
+
+Each plugin can have their own config file. _If_ `plugin_config` is defined in the
+plugin section, this config file will be passed to `LoadConfigs` as a string, so that
+the plugin can do whatever it wants with it.
+
