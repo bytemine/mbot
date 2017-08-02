@@ -17,16 +17,16 @@ to channels, _watcher_ observe a channel and react to stuff written there.
 
 ```
 [general]
-mattermost = "https://mattermost.bytemine.net"
-wsurl = "wss://mattermost.bytemine.net:443"
-listen = ":5020"
-botname = "James"
-useremail = "support@bytemine.net"
-username = "james"
-userpassword = "choo7Ohk5cohDeu"
-userlastname = "Sophie"
-userfirstname = "James"
-teamname = "bytemine"
+mattermost = "https://mattermost.example.com"
+wsurl = "wss://mattermost.example.com:443"
+listen = ":5678"
+botname = "Bender"
+useremail = "bender@example.com"
+username = "bender"
+userpassword = "bender1234"
+userlastname = "McSmithy"
+userfirstname = "Bender"
+teamname = "superteam"
 plugins_directory = "plugins/"
 plugins = "rtcrmapi_plugin.so sip_plugin.so"
 ```
