@@ -63,11 +63,10 @@ func main() {
 		fmt.Printf("\nUsing config:\n\nmattermost = %s\n"+
 			"Log Channel = %s\n"+
 			"username = :%s\n"+
-			"Listening on p
+			"Listening on port: %s\n\n",
 			config.MattermostServer,
 			config.LogChannel,
 			config.UserName,
-			config.UserPassword,
 			config.Listen)
 	}
 
