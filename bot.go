@@ -173,6 +173,8 @@ func main() {
 			pluginConfigHandler.(func (string))(pluginConfigFileName)
 		}
 
+		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
+
 		if pluginConfig.PluginType == "handler" {
 			for _, pathPattern := range pluginConfig.PathPatterns {
 				msg := fmt.Sprintf("Setting up routing for %s", pathPattern)
@@ -182,7 +184,6 @@ func main() {
 			go func() { log.Fatal(http.ListenAndServe(config.Listen, router)) }()
 		}
 
-		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
 
 		if pluginConfig.PluginType == "watcher" {
 			go func() {
