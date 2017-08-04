@@ -128,6 +128,7 @@ func main() {
 
 		keyType := fmt.Sprintf("%s.type", openPlugin)
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
+		keyWatcher := fmt.Sprintf("%s.watcher", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
 		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
 
@@ -137,19 +138,14 @@ func main() {
 		}
 
 		pluginConfig := mbothelper.BotConfigPlugin{openPlugin, viper.GetString(keyType),
-			viper.GetString(keyHandler), viper.GetStringSlice(pathPatterns),pluginConfigFileName}
+			viper.GetString(keyHandler), viper.GetString(keyWatcher), viper.GetStringSlice(pathPatterns),
+			pluginConfigFileName}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
 
 		mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loaded plugin: %s", openPlugin), "")
 
-		// 2. look up a symbol (an exported function or variable)
-		pluginHandler, err := plug.Lookup(pluginConfig.Handler)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 
 		// 3. we always have a set channels function
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
@@ -174,7 +170,13 @@ func main() {
 
 		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
 
-		if pluginConfig.PluginType == "handler" || pluginConfig.PluginType == "all" {
+		// 2. look up a symbol (an exported function or variable)
+		if pluginConfig.Handler != "" {
+			pluginHandler, err := plug.Lookup(pluginConfig.Handler)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 			for _, pathPattern := range pluginConfig.PathPatterns {
 				msg := fmt.Sprintf("Setting up routing for %s", pathPattern)
 				mbothelper.SendMsgToDebuggingChannel(msg, "")
@@ -184,12 +186,17 @@ func main() {
 		}
 
 
-		if pluginConfig.PluginType == "watcher" || pluginConfig.PluginType == "all" {
+		if pluginConfig.Watcher != "" {
+			pluginWatcher, err := plug.Lookup(pluginConfig.Handler)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 			go func() {
 				for {
 					select {
 					case resp := <-webSocketClient.EventChannel:
-						HandleWebSocketResponse(resp, pluginHandler)
+						HandleWebSocketResponse(resp, pluginWatcher)
 					}
 				}
 			}()
