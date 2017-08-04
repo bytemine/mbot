@@ -60,10 +60,10 @@ func main() {
 		config.PluginsDirectory = viper.GetString("general.plugins_directory")
 		config.Plugins = viper.GetStringSlice("general.plugins")
 
-		fmt.Printf("\nUsing config:\n mattermost = %s\n"+
+		fmt.Printf("\nUsing config:\n\nmattermost = %s\n"+
 			"Log Channel = %s\n"+
-			"username = :%s:\npassword = :%s:\n"+
-			"Listening on port: %s\n",
+			"username = :%s\n"+
+			"Listening on p
 			config.MattermostServer,
 			config.LogChannel,
 			config.UserName,
