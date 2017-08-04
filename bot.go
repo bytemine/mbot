@@ -186,7 +186,7 @@ func main() {
 
 
 		if pluginConfig.Watcher != "" {
-			pluginWatcher, err := plug.Lookup(pluginConfig.Handler)
+			pluginWatcher, err := plug.Lookup(pluginConfig.Watcher)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
