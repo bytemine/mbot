@@ -168,7 +168,7 @@ func main() {
 			}
 
 			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loading configuration file '%s' for plugin: %s",
-											pluginConfigFile, openPlugin), "")
+											pluginConfigFileName, openPlugin), "")
 
 			pluginConfigHandler.(func (string))(pluginConfigFileName)
 		}
