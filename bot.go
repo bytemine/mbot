@@ -126,7 +126,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		keyType := fmt.Sprintf("%s.type", openPlugin)
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
 		keyWatcher := fmt.Sprintf("%s.watcher", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
@@ -137,7 +136,7 @@ func main() {
 			pluginConfigFileName = viper.GetString(pluginConfigFile)
 		}
 
-		pluginConfig := mbothelper.BotConfigPlugin{openPlugin, viper.GetString(keyType),
+		pluginConfig := mbothelper.BotConfigPlugin{openPlugin,
 			viper.GetString(keyHandler), viper.GetString(keyWatcher), viper.GetStringSlice(pathPatterns),
 			pluginConfigFileName}
 
