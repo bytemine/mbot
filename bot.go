@@ -142,6 +142,9 @@ func main() {
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
+
+		mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loaded plugin: %s", openPlugin), "")
+
 		// 2. look up a symbol (an exported function or variable)
 		pluginHandler, err := plug.Lookup(pluginConfig.Handler)
 		if err != nil {
@@ -163,6 +166,9 @@ func main() {
 				fmt.Println(err)
 				os.Exit(1)
 			}
+
+			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loading configuration file '%s' for plugin: %s",
+											pluginConfigFile, openPlugin), "")
 
 			pluginConfigHandler.(func (string))(pluginConfigFileName)
 		}
@@ -188,6 +194,8 @@ func main() {
 				}
 			}()
 		}
+
+		mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Done initializing plugin: %s", openPlugin), "")
 
 	}
 
