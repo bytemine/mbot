@@ -1,11 +1,30 @@
 # mbot
 
-This is mbot. A simple and fun way to interact with mattermost.
+This is `mbot`. A simple and fun way to interact with mattermost.
 
 ## mattermost bot - simple framework
 
 This is a small framework to interact with mattermost. The bot itself won't
-do anything it needs plugins.
+do anything - it needs plugins.
+The bot does all the initialization and makes sure the plugins have a simple way
+of interacting with mattermost. During plugin initialization the function _SetChannels_
+is being called. Once that is done the plugin has pointers to the relevant mattermost
+channels. For now `mbot` offers three channels: Main, Status and Log.
+
+Example of outputting to the channel from within a plugin:
+
+```
+switch action {
+case "offhook":
+	text = fmt.Sprintf("%s CONNECTED", user)
+	channel = dChannelId
+case "onhook":
+	text = fmt.Sprintf("%s DISCONNECTED", user)
+	channel = dChannelId
+}
+
+mbothelper.SendMsgToChannel(text, "", channel)
+```
 
 ## Configuration
 
