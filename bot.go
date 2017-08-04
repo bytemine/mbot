@@ -174,7 +174,7 @@ func main() {
 
 		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
 
-		if pluginConfig.PluginType == "handler" {
+		if pluginConfig.PluginType == "handler" || pluginConfig.PluginType == "all" {
 			for _, pathPattern := range pluginConfig.PathPatterns {
 				msg := fmt.Sprintf("Setting up routing for %s", pathPattern)
 				mbothelper.SendMsgToDebuggingChannel(msg, "")
@@ -184,7 +184,7 @@ func main() {
 		}
 
 
-		if pluginConfig.PluginType == "watcher" {
+		if pluginConfig.PluginType == "watcher" || pluginConfig.PluginType == "all" {
 			go func() {
 				for {
 					select {
