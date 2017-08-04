@@ -72,7 +72,7 @@ plugin_confog = "sip_plugin.toml"
 
 ## Functions
 
-An `mbot`-plugin implemennts the following functions:
+A `mbot`-plugin implements the following functions:
 
 * The handler - referenced in the `handler`-setting in each plugin configuration setting.
 
