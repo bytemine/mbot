@@ -64,17 +64,21 @@ Each shared object has its own cateogory:
 
 ```
 [sip_plugin.so]
-type = "handler"
 handler = "HandleRequest"
+watcher = "HandleChannelMessage"
 path_patterns = "/sip/{action}/{user}/{number} /sip/{action}/{user}"
 plugin_confog = "sip_plugin.toml"
 ```
 
 ## Functions
 
-A `mbot`-plugin implements the following functions:
+A `mbot`-plugin can implement the following functions:
 
-* The handler - referenced in the `handler`-setting in each plugin configuration setting.
+* The handler - referenced in the `handler`-setting.
+* The watcher - referenced in the `watcher`-setting.
+
+A handler reacts to events from the outside (such as an http-request), while watcher observe
+mattermost channels and react to certain messages.
 
 ### All Plugins
 
