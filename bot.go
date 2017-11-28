@@ -154,6 +154,7 @@ func main() {
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
 		if err != nil {
 			fmt.Println(err)
+			// FIXME - why exit if one plugin fails to load
 			os.Exit(1)
 		}
 
@@ -162,6 +163,7 @@ func main() {
 			pluginConfigHandler, err := plug.Lookup("LoadConfig")
 			if err != nil {
 				fmt.Println(err)
+				// FIXME - why exit if one plugin config file fails to parse
 				os.Exit(1)
 			}
 
@@ -210,7 +212,7 @@ func main() {
 
 	}
 
-	// You can block forever with
+	// block
 	select {}
 }
 
@@ -223,7 +225,6 @@ type Plug struct {
 	_       chan struct{}
 	Symbols map[string]interface{}
 }
-
 
 func inspectPlugin(p *plugin.Plugin) {
 	pl := (*Plug)(unsafe.Pointer(p))
