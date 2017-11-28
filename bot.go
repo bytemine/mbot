@@ -172,7 +172,7 @@ func main() {
 
 		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
 
-		// 2. look up a symbol (an exported function or variable)
+		// look up a symbol (an exported function or variable)
 		if pluginConfig.Handler != "" {
 			pluginHandler, err := plug.Lookup(pluginConfig.Handler)
 			if err != nil {
