@@ -64,7 +64,7 @@ func main() {
 
 		fmt.Printf("\nUsing config:\n\nmattermost = %s\n"+
 			"Log Channel = %s\n"+
-			"username = :%s\n"+
+			"username = %s\n"+
 			"Listening on port: %s\n\n",
 			config.MattermostServer,
 			config.LogChannel,
@@ -195,6 +195,7 @@ func main() {
 				fmt.Println(err)
 				os.Exit(1)
 			}
+
 			go func() {
 				for {
 					select {
