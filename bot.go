@@ -126,7 +126,7 @@ func main() {
 		plug, err := plugin.Open(config.PluginsDirectory + openPlugin)
 		if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			println(fmt.Sprintf("Plugin '%s' failed to load"), openPlugin)
 		}
 
 		inspectPlugin(plug)
@@ -149,12 +149,11 @@ func main() {
 
 		mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loaded plugin: %s", openPlugin), "")
 
-		// 3. we always have a set channels function
+		// we always have a set channels function
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
 		if err != nil {
 			fmt.Println(err)
-			// FIXME - why exit if one plugin fails to load
-			os.Exit(1)
+			println(fmt.Sprintf("Symbol 'SetChannels' missing from plugin '%s'"), openPlugin)
 		}
 
 		// if we have a configured config file for the plugin load it
@@ -162,8 +161,7 @@ func main() {
 			pluginConfigHandler, err := plug.Lookup("LoadConfig")
 			if err != nil {
 				fmt.Println(err)
-				// FIXME - why exit if one plugin config file fails to parse
-				os.Exit(1)
+				println(fmt.Sprintf("Config file '%s' for plugin '%s' failed to process"), pluginConfigFileName, openPlugin)
 			}
 
 			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loading configuration file '%s' for plugin: %s",
