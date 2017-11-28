@@ -21,6 +21,8 @@ import (
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
 	"log"
+	"unsafe"
+	"reflect"
 )
 
 var client *model.Client4
@@ -126,6 +128,8 @@ func main() {
 			os.Exit(1)
 		}
 
+		inspectPlugin(plug)
+
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
 		keyWatcher := fmt.Sprintf("%s.watcher", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
@@ -209,6 +213,23 @@ func main() {
 	select {}
 }
 
-func HandleWebSocketResponse(event *model.WebSocketEvent, pluginHandler plugin.Symbol) {
-	pluginHandler.(func(socketEvent *model.WebSocketEvent))(event)
+func HandleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.Symbol) {
+	pluginWatcher.(func(socketEvent *model.WebSocketEvent))(event)
+}
+
+type Plug struct {
+	Path    string
+	_       chan struct{}
+	Symbols map[string]interface{}
+}
+
+
+func inspectPlugin(p *plugin.Plugin) {
+	pl := (*Plug)(unsafe.Pointer(p))
+
+	fmt.Printf("Plugin %s exported symbols (%d): \n", pl.Path, len(pl.Symbols))
+
+	for name, pointers := range pl.Symbols {
+		fmt.Printf("symbol: %s, pointer: %v, type: %v\n", name, pointers, reflect.TypeOf(pointers))
+	}
 }
