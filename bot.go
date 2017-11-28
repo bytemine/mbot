@@ -21,8 +21,8 @@ import (
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
 	"log"
-	"unsafe"
 	"reflect"
+	"unsafe"
 )
 
 var client *model.Client4
@@ -136,7 +136,7 @@ func main() {
 		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
 
 		pluginConfigFileName := ""
-		if(viper.IsSet(pluginConfigFile)) {
+		if viper.IsSet(pluginConfigFile) {
 			pluginConfigFileName = viper.GetString(pluginConfigFile)
 		}
 
@@ -146,9 +146,7 @@ func main() {
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
-
 		mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loaded plugin: %s", openPlugin), "")
-
 
 		// 3. we always have a set channels function
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
@@ -168,9 +166,9 @@ func main() {
 			}
 
 			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loading configuration file '%s' for plugin: %s",
-											pluginConfigFileName, openPlugin), "")
+				pluginConfigFileName, openPlugin), "")
 
-			pluginConfigHandler.(func (string))(pluginConfigFileName)
+			pluginConfigHandler.(func(string))(pluginConfigFileName)
 		}
 
 		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
@@ -189,7 +187,6 @@ func main() {
 			}
 			go func() { log.Fatal(http.ListenAndServe(config.Listen, router)) }()
 		}
-
 
 		if pluginConfig.Watcher != "" {
 			pluginWatcher, err := plug.Lookup(pluginConfig.Watcher)
