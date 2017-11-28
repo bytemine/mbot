@@ -38,8 +38,8 @@ var config mbothelper.BotConfig
 
 func main() {
 
-	// look in config/bot.toml for the config
-	viper.SetConfigName("bot")
+	// look in config/mbot.toml for the config
+	viper.SetConfigName("mbot")
 	viper.AddConfigPath("config")
 
 	err := viper.ReadInConfig()
