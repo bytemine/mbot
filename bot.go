@@ -45,6 +45,7 @@ func main() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal("Config file not found or error parsing\n\n: %s", err)
+		os.Exit(-1)
 	} else {
 		config.MattermostServer = viper.GetString("general.mattermost")
 		config.MattermostWSURL = viper.GetString("general.wsurl")
