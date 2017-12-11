@@ -12,17 +12,17 @@ package main
 
 import (
 	"net/http"
-	"os"
 	"plugin"
 
 	"fmt"
+	"log"
+	"reflect"
+	"unsafe"
+
 	"github.com/bytemine/mbothelper"
 	"github.com/gorilla/mux"
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
-	"log"
-	"reflect"
-	"unsafe"
 )
 
 var client *model.Client4
@@ -44,34 +44,26 @@ func main() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatal("Config file not found or error parsing\n\n: %s", err)
-		os.Exit(-1)
-	} else {
-		config.MattermostServer = viper.GetString("general.mattermost")
-		config.MattermostWSURL = viper.GetString("general.wsurl")
-		config.Listen = viper.GetString("general.listen")
-		config.BotName = viper.GetString("general.botname")
-		config.UserEmail = viper.GetString("general.useremail")
-		config.UserName = viper.GetString("general.username")
-		config.UserPassword = viper.GetString("general.userpassword")
-		config.UserLastname = viper.GetString("general.userlastname")
-		config.UserFirstname = viper.GetString("general.userfirstname")
-		config.TeamName = viper.GetString("general.teamname")
-		config.LogChannel = viper.GetString("channel.log")
-		config.MainChannel = viper.GetString("channel.main")
-		config.StatusChannel = viper.GetString("channel.status")
-		config.PluginsDirectory = viper.GetString("general.plugins_directory")
-		config.Plugins = viper.GetStringSlice("general.plugins")
-
-		fmt.Printf("\nUsing config:\n\nmattermost = %s\n"+
-			"Log Channel = %s\n"+
-			"username = %s\n"+
-			"Listening on port: %s\n\n",
-			config.MattermostServer,
-			config.LogChannel,
-			config.UserName,
-			config.Listen)
+		log.Fatalf("Config file not found or error parsing: %v", err)
 	}
+
+	config.MattermostServer = viper.GetString("general.mattermost")
+	config.MattermostWSURL = viper.GetString("general.wsurl")
+	config.Listen = viper.GetString("general.listen")
+	config.BotName = viper.GetString("general.botname")
+	config.UserEmail = viper.GetString("general.useremail")
+	config.UserName = viper.GetString("general.username")
+	config.UserPassword = viper.GetString("general.userpassword")
+	config.UserLastname = viper.GetString("general.userlastname")
+	config.UserFirstname = viper.GetString("general.userfirstname")
+	config.TeamName = viper.GetString("general.teamname")
+	config.LogChannel = viper.GetString("channel.log")
+	config.MainChannel = viper.GetString("channel.main")
+	config.StatusChannel = viper.GetString("channel.status")
+	config.PluginsDirectory = viper.GetString("general.plugins_directory")
+	config.Plugins = viper.GetStringSlice("general.plugins")
+
+	log.Printf("Using Config:\n%+v", config)
 
 	// make sure we exit cleanly upon ctrl-c
 	mbothelper.SetupGracefulShutdown()
@@ -107,8 +99,7 @@ func main() {
 	// Lets start listening to some channels via the websocket!
 	webSocketClient, err := model.NewWebSocketClient(config.MattermostWSURL, client.AuthToken)
 	if err != nil {
-		println("We failed to connect to the web socket")
-		//PrintError(err)
+		log.Printf("We failed to connect to the web socket: %v", err)
 	}
 
 	webSocketClient.Listen()
@@ -125,8 +116,7 @@ func main() {
 		// 1. open the so file to load the symbols
 		plug, err := plugin.Open(config.PluginsDirectory + openPlugin)
 		if err != nil {
-			fmt.Println(err)
-			println(fmt.Sprintf("Plugin '%s' failed to load"), openPlugin)
+			log.Printf("Plugin %v failed to load: %v", openPlugin, err)
 		}
 
 		inspectPlugin(plug)
@@ -141,9 +131,13 @@ func main() {
 			pluginConfigFileName = viper.GetString(pluginConfigFile)
 		}
 
-		pluginConfig := mbothelper.BotConfigPlugin{openPlugin,
-			viper.GetString(keyHandler), viper.GetString(keyWatcher), viper.GetStringSlice(pathPatterns),
-			pluginConfigFileName}
+		pluginConfig := mbothelper.BotConfigPlugin{
+			PluginName:   openPlugin,
+			Handler:      viper.GetString(keyHandler),
+			Watcher:      viper.GetString(keyWatcher),
+			PathPatterns: viper.GetStringSlice(pathPatterns),
+			PluginConfig: pluginConfigFileName,
+		}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
 
@@ -152,16 +146,14 @@ func main() {
 		// we always have a set channels function
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
 		if err != nil {
-			fmt.Println(err)
-			println(fmt.Sprintf("Symbol 'SetChannels' missing from plugin '%s'"), openPlugin)
+			log.Printf("Symbol 'SetChannels' missing from plugin '%v'. Error: %v", openPlugin, err)
 		}
 
 		// if we have a configured config file for the plugin load it
 		if pluginConfigFileName != "" {
 			pluginConfigHandler, err := plug.Lookup("LoadConfig")
 			if err != nil {
-				fmt.Println(err)
-				println(fmt.Sprintf("Config file '%s' for plugin '%s' failed to process"), pluginConfigFileName, openPlugin)
+				log.Printf("Config file '%v' for plugin '%v' failed to process: %v", pluginConfigFileName, openPlugin, err)
 			}
 
 			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loading configuration file '%s' for plugin: %s",
@@ -176,8 +168,7 @@ func main() {
 		if pluginConfig.Handler != "" {
 			pluginHandler, err := plug.Lookup(pluginConfig.Handler)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				log.Fatalf("Couldn't lookup handler: %v", err)
 			}
 			for _, pathPattern := range pluginConfig.PathPatterns {
 				msg := fmt.Sprintf("Setting up routing for %s", pathPattern)
@@ -190,16 +181,12 @@ func main() {
 		if pluginConfig.Watcher != "" {
 			pluginWatcher, err := plug.Lookup(pluginConfig.Watcher)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				log.Fatalf("Couldn't lookup watcher: %v", err)
 			}
 
 			go func() {
-				for {
-					select {
-					case resp := <-webSocketClient.EventChannel:
-						HandleWebSocketResponse(resp, pluginWatcher)
-					}
+				for resp := range webSocketClient.EventChannel {
+					handleWebSocketResponse(resp, pluginWatcher)
 				}
 			}()
 		}
@@ -212,7 +199,7 @@ func main() {
 	select {}
 }
 
-func HandleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.Symbol) {
+func handleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.Symbol) {
 	pluginWatcher.(func(socketEvent *model.WebSocketEvent))(event)
 }
 
@@ -225,9 +212,9 @@ type Plug struct {
 func inspectPlugin(p *plugin.Plugin) {
 	pl := (*Plug)(unsafe.Pointer(p))
 
-	fmt.Printf("Plugin %s exported symbols (%d): \n", pl.Path, len(pl.Symbols))
+	log.Printf("Plugin %s exported symbols (%d):", pl.Path, len(pl.Symbols))
 
 	for name, pointers := range pl.Symbols {
-		fmt.Printf("symbol: %s, pointer: %v, type: %v\n", name, pointers, reflect.TypeOf(pointers))
+		log.Printf("symbol: %s, pointer: %v, type: %v", name, pointers, reflect.TypeOf(pointers))
 	}
 }
