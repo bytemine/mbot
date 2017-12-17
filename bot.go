@@ -112,8 +112,7 @@ func main() {
 	// iterate over plugins
 	// each plugin will run in a goroutine
 	for _, openPlugin := range config.Plugins {
-		// load module
-		// 1. open the so file to load the symbols
+		// loading the plugin itself - open the so file to load the symbols
 		plug, err := plugin.Open(config.PluginsDirectory + openPlugin)
 		if err != nil {
 			log.Printf("Plugin %v failed to load: %v", openPlugin, err)
