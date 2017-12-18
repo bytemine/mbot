@@ -124,11 +124,14 @@ func main() {
 		keyWatcher := fmt.Sprintf("%s.watcher", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
 		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
+		channels := fmt.Sprintf("%s.channels", openPlugin)
 
 		pluginConfigFileName := ""
 		if viper.IsSet(pluginConfigFile) {
 			pluginConfigFileName = viper.GetString(pluginConfigFile)
 		}
+
+		channelList := viper.GetStringSlice(channels)
 
 		pluginConfig := mbothelper.BotConfigPlugin{
 			PluginName:   openPlugin,
@@ -136,6 +139,7 @@ func main() {
 			Watcher:      viper.GetString(keyWatcher),
 			PathPatterns: viper.GetStringSlice(pathPatterns),
 			PluginConfig: pluginConfigFileName,
+			Channels:	  make(map[string]*model.Channel),
 		}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
@@ -162,6 +166,14 @@ func main() {
 		}
 
 		pluginHandlerSetChannels.(func(string, string, string))(mbothelper.MainChannel.Id, mbothelper.StatusChannel.Id, mbothelper.DebuggingChannel.Id)
+
+		// join configured channels for plugin
+		for _, channel := range channelList {
+			log.Printf("joining channel: %s\n", channel)
+			rchannel := mbothelper.JoinChannel(channel, mbothelper.BotTeam.Id)
+			pluginConfig.Channels[channel] = rchannel
+			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Joined channel '%s'", channel), "")
+		}
 
 		// look up a symbol (an exported function or variable)
 		if pluginConfig.Handler != "" {
