@@ -116,6 +116,7 @@ func main() {
 		plug, err := plugin.Open(config.PluginsDirectory + openPlugin)
 		if err != nil {
 			log.Printf("Plugin %v failed to load: %v", openPlugin, err)
+			continue
 		}
 
 		inspectPlugin(plug)
@@ -150,6 +151,7 @@ func main() {
 		pluginHandlerSetChannels, err := plug.Lookup("SetChannels")
 		if err != nil {
 			log.Printf("Symbol 'SetChannels' missing from plugin '%v'. Error: %v", openPlugin, err)
+			continue
 		}
 
 		// if we have a configured config file for the plugin load it
@@ -157,6 +159,7 @@ func main() {
 			pluginConfigHandler, err := plug.Lookup("LoadConfig")
 			if err != nil {
 				log.Printf("Config file '%v' for plugin '%v' failed to process: %v", pluginConfigFileName, openPlugin, err)
+				continue
 			}
 
 			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Loading configuration file '%s' for plugin: %s",
@@ -179,7 +182,8 @@ func main() {
 		if pluginConfig.Handler != "" {
 			pluginHandler, err := plug.Lookup(pluginConfig.Handler)
 			if err != nil {
-				log.Fatalf("Couldn't lookup handler: %v", err)
+				log.Printf("Couldn't lookup handler: %v", err)
+				continue
 			}
 			for _, pathPattern := range pluginConfig.PathPatterns {
 				msg := fmt.Sprintf("Setting up routing for %s", pathPattern)
@@ -192,7 +196,8 @@ func main() {
 		if pluginConfig.Watcher != "" {
 			pluginWatcher, err := plug.Lookup(pluginConfig.Watcher)
 			if err != nil {
-				log.Fatalf("Couldn't lookup watcher: %v", err)
+				log.Printf("Couldn't lookup watcher: %v", err)
+				continue
 			}
 
 			go func() {
