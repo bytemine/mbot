@@ -139,7 +139,7 @@ func main() {
 			Watcher:      viper.GetString(keyWatcher),
 			PathPatterns: viper.GetStringSlice(pathPatterns),
 			PluginConfig: pluginConfigFileName,
-			Channels:	  make(map[string]*model.Channel),
+			Channels:     make(map[string]*model.Channel),
 		}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
