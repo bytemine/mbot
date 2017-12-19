@@ -91,10 +91,10 @@ func main() {
 	mbothelper.SendMsgToDebuggingChannel("_"+config.BotName+" has **started** running_", "")
 
 	// Join to main channel...
-	mbothelper.MainChannel = mbothelper.JoinChannel(config.MainChannel, mbothelper.BotTeam.Id)
+	mbothelper.MainChannel = mbothelper.JoinChannel(config.MainChannel, mbothelper.BotTeam.Id, mbothelper.BotUser.Id)
 
 	// ...and our status channel
-	mbothelper.StatusChannel = mbothelper.JoinChannel(config.StatusChannel, mbothelper.BotTeam.Id)
+	mbothelper.StatusChannel = mbothelper.JoinChannel(config.StatusChannel, mbothelper.BotTeam.Id, mbothelper.BotUser.Id)
 
 	// Lets start listening to some channels via the websocket!
 	webSocketClient, err := model.NewWebSocketClient(config.MattermostWSURL, client.AuthToken)
@@ -173,7 +173,7 @@ func main() {
 		// join configured channels for plugin
 		for _, channel := range channelList {
 			log.Printf("joining channel: %s\n", channel)
-			rchannel := mbothelper.JoinChannel(channel, mbothelper.BotTeam.Id)
+			rchannel := mbothelper.JoinChannel(channel, mbothelper.BotTeam.Id, mbothelper.BotUser.Id)
 			pluginConfig.Channels[channel] = rchannel
 			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Joined channel '%s'", channel), "")
 		}
