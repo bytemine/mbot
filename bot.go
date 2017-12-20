@@ -23,6 +23,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
+	"strings"
 )
 
 var client *model.Client4
@@ -123,6 +124,7 @@ func main() {
 
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
 		keyWatcher := fmt.Sprintf("%s.watcher", openPlugin)
+		keyNotificationHandler := fmt.Sprintf("%s.notification_handler", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
 		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
 		channels := fmt.Sprintf("%s.channels", openPlugin)
@@ -138,6 +140,7 @@ func main() {
 			PluginName:   openPlugin,
 			Handler:      viper.GetString(keyHandler),
 			Watcher:      viper.GetString(keyWatcher),
+			NotificationHandler:	viper.GetString(keyNotificationHandler),
 			PathPatterns: viper.GetStringSlice(pathPatterns),
 			PluginConfig: pluginConfigFileName,
 			Channels:     make(map[string]*model.Channel),
@@ -207,6 +210,20 @@ func main() {
 			}()
 		}
 
+		if pluginConfig.NotificationHandler != "" {
+			pluginNotificationHandler, err := plug.Lookup(pluginConfig.NotificationHandler)
+			if err != nil {
+				log.Printf("Couldn't lookup notification handler: %v", err)
+				continue
+			}
+
+			go func() {
+				for resp := range webSocketClient.EventChannel {
+					handleMention(resp, pluginNotificationHandler)
+				}
+			}()
+		}
+
 		mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Done initializing plugin: %s", openPlugin), "")
 
 	}
@@ -217,6 +234,20 @@ func main() {
 
 func handleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.Symbol) {
 	pluginWatcher.(func(socketEvent *model.WebSocketEvent))(event)
+}
+
+func handleMention(event *model.WebSocketEvent, pluginNotificationHandler plugin.Symbol) {
+
+	if (event.Data["mentions"] != nil) {
+
+		i := event.Data["mentions"].(string)
+
+		// if we see our name in the mentions trigger to it
+		if (strings.Contains(i, mbothelper.BotUser.Id)) {
+		}
+	}
+
+	pluginNotificationHandler.(func(socketEvent *model.WebSocketEvent))(event)
 }
 
 type Plug struct {
