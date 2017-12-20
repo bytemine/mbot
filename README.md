@@ -67,7 +67,7 @@ Each shared object has its own cateogory:
 handler = "HandleRequest"
 watcher = "HandleChannelMessage"
 path_patterns = "/sip/{action}/{user}/{number} /sip/{action}/{user}"
-plugin_confog = "sip_plugin.toml"
+plugin_config = "sip_plugin.toml"
 ```
 
 ## Functions
