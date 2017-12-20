@@ -66,7 +66,7 @@ Each shared object has its own cateogory:
 [sip_plugin.so]
 handler = "HandleRequest"
 watcher = "HandleChannelMessage"
-notification_handler = "HandleMention"
+mention_handler = "HandleMention"
 channels = "ExtraChannel"
 path_patterns = "/sip/{action}/{user}/{number} /sip/{action}/{user}"
 plugin_config = "sip_plugin.toml"
@@ -96,9 +96,9 @@ mattermost channels and react to certain messages, such as mentions.
 
 * HandleChannelMessage(event *model.WebSocketEvent)
 
-### _notification_handler_
+### _mention_handler_
 
-* HandleNotification(event *model.WebSocketEvent)
+* HandleMention(event *model.WebSocketEvent)
 
 ### channels
 
