@@ -124,7 +124,7 @@ func main() {
 
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
 		keyWatcher := fmt.Sprintf("%s.watcher", openPlugin)
-		keyNotificationHandler := fmt.Sprintf("%s.notification_handler", openPlugin)
+		keyMentionHandler := fmt.Sprintf("%s.mention_handler", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
 		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
 		channels := fmt.Sprintf("%s.channels", openPlugin)
@@ -140,7 +140,7 @@ func main() {
 			PluginName:   openPlugin,
 			Handler:      viper.GetString(keyHandler),
 			Watcher:      viper.GetString(keyWatcher),
-			NotificationHandler:	viper.GetString(keyNotificationHandler),
+			MentionHandler:	viper.GetString(keyMentionHandler),
 			PathPatterns: viper.GetStringSlice(pathPatterns),
 			PluginConfig: pluginConfigFileName,
 			Channels:     make(map[string]*model.Channel),
@@ -210,16 +210,16 @@ func main() {
 			}()
 		}
 
-		if pluginConfig.NotificationHandler != "" {
-			pluginNotificationHandler, err := plug.Lookup(pluginConfig.NotificationHandler)
+		if pluginConfig.MentionHandler != "" {
+			pluginMentionHandler, err := plug.Lookup(pluginConfig.MentionHandler)
 			if err != nil {
-				log.Printf("Couldn't lookup notification handler: %v", err)
+				log.Printf("Couldn't lookup mention handler: %v", err)
 				continue
 			}
 
 			go func() {
 				for resp := range webSocketClient.EventChannel {
-					handleMention(resp, pluginNotificationHandler)
+					handleMention(resp, pluginMentionHandler)
 				}
 			}()
 		}
@@ -236,7 +236,7 @@ func handleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.S
 	pluginWatcher.(func(socketEvent *model.WebSocketEvent))(event)
 }
 
-func handleMention(event *model.WebSocketEvent, pluginNotificationHandler plugin.Symbol) {
+func handleMention(event *model.WebSocketEvent, pluginMentionHandler plugin.Symbol) {
 
 	if (event.Data["mentions"] != nil) {
 
@@ -247,7 +247,7 @@ func handleMention(event *model.WebSocketEvent, pluginNotificationHandler plugin
 		}
 	}
 
-	pluginNotificationHandler.(func(socketEvent *model.WebSocketEvent))(event)
+	pluginMentionHandler.(func(socketEvent *model.WebSocketEvent))(event)
 }
 
 type Plug struct {
