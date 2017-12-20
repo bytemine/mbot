@@ -66,6 +66,8 @@ Each shared object has its own cateogory:
 [sip_plugin.so]
 handler = "HandleRequest"
 watcher = "HandleChannelMessage"
+notification_handler = "HandleMention"
+channels = "ExtraChannel"
 path_patterns = "/sip/{action}/{user}/{number} /sip/{action}/{user}"
 plugin_config = "sip_plugin.toml"
 ```
@@ -76,9 +78,10 @@ A `mbot`-plugin can implement the following functions:
 
 * The handler - referenced in the `handler`-setting.
 * The watcher - referenced in the `watcher`-setting.
+* The mention Handler - referenced in the `mention_handler`-setting.
 
 A handler reacts to events from the outside (such as an http-request), while watcher observe
-mattermost channels and react to certain messages.
+mattermost channels and react to certain messages, such as mentions.
 
 ### All Plugins
 
@@ -92,6 +95,15 @@ mattermost channels and react to certain messages.
 ### _watcher_
 
 * HandleChannelMessage(event *model.WebSocketEvent)
+
+### _notification_handler_
+
+* HandleNotification(event *model.WebSocketEvent)
+
+### channels
+
+In addtion to the debug, status as well as the lounge channel, each plugin can add addtional channels.
+This is done via a space-seperated list in the `channels`-setting.
 
 ### Loading configs
 
