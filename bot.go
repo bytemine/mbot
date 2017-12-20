@@ -137,13 +137,13 @@ func main() {
 		channelList := viper.GetStringSlice(channels)
 
 		pluginConfig := mbothelper.BotConfigPlugin{
-			PluginName:   openPlugin,
-			Handler:      viper.GetString(keyHandler),
-			Watcher:      viper.GetString(keyWatcher),
-			MentionHandler:	viper.GetString(keyMentionHandler),
-			PathPatterns: viper.GetStringSlice(pathPatterns),
-			PluginConfig: pluginConfigFileName,
-			Channels:     make(map[string]*model.Channel),
+			PluginName:     openPlugin,
+			Handler:        viper.GetString(keyHandler),
+			Watcher:        viper.GetString(keyWatcher),
+			MentionHandler: viper.GetString(keyMentionHandler),
+			PathPatterns:   viper.GetStringSlice(pathPatterns),
+			PluginConfig:   pluginConfigFileName,
+			Channels:       make(map[string]*model.Channel),
 		}
 
 		config.PluginsConfig[openPlugin] = pluginConfig
@@ -238,12 +238,12 @@ func handleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.S
 
 func handleMention(event *model.WebSocketEvent, pluginMentionHandler plugin.Symbol) {
 
-	if (event.Data["mentions"] != nil) {
+	if event.Data["mentions"] != nil {
 
 		i := event.Data["mentions"].(string)
 
 		// if we see our name in the mentions trigger to it
-		if (strings.Contains(i, mbothelper.BotUser.Id)) {
+		if strings.Contains(i, mbothelper.BotUser.Id) {
 		}
 	}
 
