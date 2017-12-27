@@ -19,11 +19,11 @@ import (
 	"reflect"
 	"unsafe"
 
+	"encoding/json"
 	"github.com/bytemine/mbothelper"
 	"github.com/gorilla/mux"
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
-	"encoding/json"
 	"strings"
 )
 
