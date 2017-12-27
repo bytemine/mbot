@@ -97,14 +97,6 @@ func main() {
 	// ...and our status channel
 	mbothelper.StatusChannel = mbothelper.JoinChannel(config.StatusChannel, mbothelper.BotTeam.Id, mbothelper.BotUser.Id)
 
-	// Lets start listening to some channels via the websocket!
-	webSocketClient, err := model.NewWebSocketClient(config.MattermostWSURL, client.AuthToken)
-	if err != nil {
-		log.Printf("We failed to connect to the web socket: %v", err)
-	}
-
-	webSocketClient.Listen()
-
 	// for request handler plugins
 	router := mux.NewRouter()
 
@@ -203,7 +195,18 @@ func main() {
 				continue
 			}
 
+			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Registering watcher for plugin '%s'", openPlugin), "")
+
 			go func() {
+
+				// create a dedicated websocket client for this go routine
+				webSocketClient, err := model.NewWebSocketClient(config.MattermostWSURL, client.AuthToken)
+				if err != nil {
+					log.Printf("Failed to connect to the web socket: %v", err)
+				}
+
+				webSocketClient.Listen()
+
 				for resp := range webSocketClient.EventChannel {
 					handleWebSocketResponse(resp, pluginWatcher)
 				}
@@ -217,7 +220,18 @@ func main() {
 				continue
 			}
 
+			mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Registering mention_handler for plugin '%s'", openPlugin), "")
+
 			go func() {
+
+				// create a dedicated websocket client for this go routine
+				webSocketClient, err := model.NewWebSocketClient(config.MattermostWSURL, client.AuthToken)
+				if err != nil {
+					log.Printf("Failed to connect to the web socket: %v", err)
+				}
+
+				webSocketClient.Listen()
+
 				for resp := range webSocketClient.EventChannel {
 					handleMention(resp, pluginMentionHandler)
 				}
