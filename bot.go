@@ -23,6 +23,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
+	"encoding/json"
 	"strings"
 )
 
@@ -254,14 +255,20 @@ func handleMention(event *model.WebSocketEvent, pluginMentionHandler plugin.Symb
 
 	if event.Data["mentions"] != nil {
 
-		i := event.Data["mentions"].(string)
+		if strings.Contains(event.Data["mentions"].(string), mbothelper.BotUser.Id) {
 
-		// if we see our name in the mentions trigger to it
-		if strings.Contains(i, mbothelper.BotUser.Id) {
+			j := []uint8(event.Data["post"].(string))
+
+			var m model.Post
+			err := json.Unmarshal(j, &m)
+
+			if err != nil {
+				log.Printf("Error decoding json: %+v", err)
+			}
+
+			pluginMentionHandler.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, &m)
 		}
 	}
-
-	pluginMentionHandler.(func(socketEvent *model.WebSocketEvent))(event)
 }
 
 type Plug struct {
