@@ -38,6 +38,8 @@ var statusChannel *model.Channel
 
 var config mbothelper.BotConfig
 
+var helpHandlers map[string]plugin.Symbol
+
 func main() {
 
 	// look in config/mbot.toml for the config
@@ -98,6 +100,8 @@ func main() {
 	// ...and our status channel
 	mbothelper.StatusChannel = mbothelper.JoinChannel(config.StatusChannel, mbothelper.BotTeam.Id, mbothelper.BotUser.Id)
 
+	helpHandlers = map[string]plugin.Symbol{}
+
 	// for request handler plugins
 	router := mux.NewRouter()
 
@@ -118,6 +122,7 @@ func main() {
 		keyHandler := fmt.Sprintf("%s.handler", openPlugin)
 		keyWatcher := fmt.Sprintf("%s.watcher", openPlugin)
 		keyMentionHandler := fmt.Sprintf("%s.mention_handler", openPlugin)
+		keyHelpHandler := fmt.Sprintf("%s.help_handler", openPlugin)
 		pathPatterns := fmt.Sprintf("%s.path_patterns", openPlugin)
 		pluginConfigFile := fmt.Sprintf("%s.config_file", openPlugin)
 		channels := fmt.Sprintf("%s.channels", openPlugin)
@@ -134,6 +139,7 @@ func main() {
 			Handler:        viper.GetString(keyHandler),
 			Watcher:        viper.GetString(keyWatcher),
 			MentionHandler: viper.GetString(keyMentionHandler),
+			HelpHandler:    viper.GetString(keyHelpHandler),
 			PathPatterns:   viper.GetStringSlice(pathPatterns),
 			PluginConfig:   pluginConfigFileName,
 			Channels:       make(map[string]*model.Channel),
@@ -239,6 +245,17 @@ func main() {
 			}()
 		}
 
+		if pluginConfig.HelpHandler != "" {
+			pluginHelpHandler, err := plug.Lookup(pluginConfig.HelpHandler)
+
+			if err != nil {
+				log.Printf("Couldn't lookup help handler: %v", err)
+			}
+
+			helpHandlers[pluginConfig.PluginName] = pluginHelpHandler
+
+		}
+
 		mbothelper.SendMsgToDebuggingChannel(fmt.Sprintf("Done initializing plugin: %s", openPlugin), "")
 
 	}
@@ -266,6 +283,11 @@ func handleMention(event *model.WebSocketEvent, pluginMentionHandler plugin.Symb
 				log.Printf("Error decoding json: %+v", err)
 			}
 
+			// if we see 'help' in the message contents
+			if strings.Contains(m.Message, "help") {
+				handleHelp(m.UserId, m.Message)
+			}
+
 			pluginMentionHandler.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, &m)
 		}
 	}
@@ -275,6 +297,31 @@ type Plug struct {
 	Path    string
 	_       chan struct{}
 	Symbols map[string]interface{}
+}
+
+func handleHelp(userId string, message string) {
+
+	helped := false
+
+	// see if one of our plugins has a handler for this
+	for pluginKey := range helpHandlers {
+
+		if strings.Contains(message, pluginKey) {
+			helpHandlers[pluginKey].(func(userId string, message string))(userId, message)
+			helped = true
+			break
+		}
+	}
+
+	if !helped {
+		// nope, not the case, fire general help
+		help(userId)
+	}
+}
+
+func help(userId string) {
+	m := "You've asked for help"
+	mbothelper.ReplyToUser(m, userId)
 }
 
 func inspectPlugin(p *plugin.Plugin) {
