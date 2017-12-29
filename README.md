@@ -96,7 +96,11 @@ mattermost channels and react to certain messages, such as mentions.
 
 ### _watcher_
 
-* HandleChannelMessage(event *model.WebSocketEvent)
+* HandleChannelMessage(event *model.WebSocketEvent, post *model.Post)
+
+The watcher handler as access to the complete `event` (which is a [WebSocketEvent](https://github.com/mattermost/mattermost-server/blob/master/model/websocket_message.go)
+from the mattermost model). To ease handling it
+is being passed a pointer to the `post` (see [post](https://github.com/mattermost/mattermost-server/blob/master/model/post.go)) directly.
 
 ### _mention_handler_
 

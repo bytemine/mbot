@@ -270,7 +270,10 @@ func main() {
 }
 
 func handleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.Symbol) {
-	pluginWatcher.(func(socketEvent *model.WebSocketEvent))(event)
+
+	m := extractPost(event.Data["post"].(string))
+
+	pluginWatcher.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, m)
 }
 
 func handleMention(event *model.WebSocketEvent, pluginMentionHandler plugin.Symbol) {
