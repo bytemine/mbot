@@ -42,6 +42,9 @@ var helpHandlers map[string]plugin.Symbol
 
 func main() {
 
+	log.SetPrefix("[mbot] - ")
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Llongfile)
+
 	// look in config/mbot.toml for the config
 	viper.SetConfigName("mbot")
 	viper.AddConfigPath("config")
