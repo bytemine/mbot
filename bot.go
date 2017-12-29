@@ -325,8 +325,14 @@ func handleHelp(userId string, message string) {
 }
 
 func help(userId string) {
-	m := "You've asked for help"
+	m := fmt.Sprintf("help - mbot - version: %s\nUse `help <pluginname>` for plugn specific help.\n", MbotVersion);
+
+	for plugin := range helpHandlers {
+		m = fmt.Sprintf("%s\n\t%s", m, plugin)
+	}
+
 	mbothelper.ReplyToUser(m, userId)
+
 }
 
 func inspectPlugin(p *plugin.Plugin) {
