@@ -36,6 +36,8 @@ var debuggingChannel *model.Channel
 var mainChannel *model.Channel
 var statusChannel *model.Channel
 
+const MbotVersion = "0.0.1"
+
 var config mbothelper.BotConfig
 
 var helpHandlers map[string]plugin.Symbol
