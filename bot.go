@@ -279,21 +279,14 @@ func handleMention(event *model.WebSocketEvent, pluginMentionHandler plugin.Symb
 
 		if strings.Contains(event.Data["mentions"].(string), mbothelper.BotUser.Id) {
 
-			j := []uint8(event.Data["post"].(string))
-
-			var m model.Post
-			err := json.Unmarshal(j, &m)
-
-			if err != nil {
-				log.Printf("Error decoding json: %+v", err)
-			}
+			m := extractPost(event.Data["post"].(string))
 
 			// if we see 'help' in the message contents
 			if strings.Contains(m.Message, "help") {
 				handleHelp(m.UserId, m.Message)
 			}
 
-			pluginMentionHandler.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, &m)
+			pluginMentionHandler.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, m)
 		}
 	}
 }
@@ -302,6 +295,20 @@ type Plug struct {
 	Path    string
 	_       chan struct{}
 	Symbols map[string]interface{}
+}
+
+func extractPost(eventData string) *model.Post {
+
+	j := []uint8(eventData)
+
+	var m model.Post
+	err := json.Unmarshal(j, &m)
+
+	if err != nil {
+		log.Printf("Error decoding json: %+v", err)
+	}
+
+	return &m
 }
 
 func handleHelp(userId string, message string) {
