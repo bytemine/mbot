@@ -1,0 +1,12 @@
+[general]
+mattermost = "https://mattermost.example.com"
+wsurl = "wss://mattermost.example.com:443"
+listen = ":5678"
+botname = "Bender"
+useremail = "bender@example.com"
+username = "bender"
+userpassword = "bender1234"
+userlastname = "McSmithy"
+userfirstname = "Bender"
+teamname = "superteam"
+plugins_directory = "plugins/"
