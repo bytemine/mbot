@@ -20,11 +20,12 @@ import (
 	"unsafe"
 
 	"encoding/json"
+	"strings"
+
 	"github.com/bytemine/mbothelper"
 	"github.com/gorilla/mux"
 	"github.com/mattermost/platform/model"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 var client *model.Client4
@@ -270,27 +271,39 @@ func main() {
 }
 
 func handleWebSocketResponse(event *model.WebSocketEvent, pluginWatcher plugin.Symbol) {
+	s, ok := event.Data["post"].(string)
+	if !ok {
+		log.Printf("handleWebSocketResponse: type assertion failed, want: string, got: %T", event.Data["post"])
+		return
+	}
 
-	m := extractPost(event.Data["post"].(string))
-
+	m := extractPost(s)
 	pluginWatcher.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, m)
 }
 
 func handleMention(event *model.WebSocketEvent, pluginMentionHandler plugin.Symbol) {
+	sMention, ok := event.Data["mentions"].(string)
+	if !ok {
+		log.Printf("handleMention: type assertion failed, want: string, got: %T", event.Data["mentions"])
+		return
+	}
 
-	if event.Data["mentions"] != nil {
+	if strings.Contains(sMention, mbothelper.BotUser.Id) {
 
-		if strings.Contains(event.Data["mentions"].(string), mbothelper.BotUser.Id) {
-
-			m := extractPost(event.Data["post"].(string))
-
-			// if we see 'help' in the message contents
-			if strings.Contains(m.Message, "help") {
-				handleHelp(m.UserId, m.Message)
-			}
-
-			pluginMentionHandler.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, m)
+		sPost, ok := event.Data["post"].(string)
+		if !ok {
+			log.Printf("handleMention: type assertion failed, want: string, got: %T", event.Data["post"])
+			return
 		}
+
+		m := extractPost(sPost)
+
+		// if we see 'help' in the message contents
+		if strings.Contains(m.Message, "help") {
+			handleHelp(m.UserId, m.Message)
+		}
+
+		pluginMentionHandler.(func(socketEvent *model.WebSocketEvent, Post *model.Post))(event, m)
 	}
 }
 
