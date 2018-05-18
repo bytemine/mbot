@@ -1,70 +1,130 @@
-# Mattermost Bot Sample
+# mbot
 
-## Overview
+This is `mbot`. A simple and fun way to interact with mattermost.
 
-This sample Bot shows how to use the Mattermost [Go driver](https://github.com/mattermost/platform/blob/master/model/client.go) to interact with a Mattermost server, listen to events and respond to messages. Documentation for the Go driver can be found [here](https://godoc.org/github.com/mattermost/platform/model#Client).
+## mattermost bot - simple framework
 
-Highlights of APIs used in this sample:
- - Log in to the Mattermost server
- - Create a channel
- - Modify user attributes 
- - Connect and listen to WebSocket events for real-time responses to messages
- - Post a message to a channel
+This is a small framework to interact with mattermost. The bot itself won't
+do anything - it needs plugins.
+The bot does all the initialization and makes sure the plugins have a simple way
+of interacting with mattermost. During plugin initialization the function _SetChannels_
+is being called. Once that is done the plugin has pointers to the relevant mattermost
+channels. For now `mbot` offers three channels: Main, Status and Log.
 
-## Setup Server Environment
+Example of outputting to the channel from within a plugin:
 
-1 - [Install](http://docs.mattermost.com/install/requirements.html) or [upgrade](https://docs.mattermost.com/administration/upgrade.html) to Mattermost server version 3.10+, and verify that the Mattermost server is running on [http://localhost:8065](http://localhost:8065). 
-
-This Bot Sample was tested with Mattermost server version 3.10.0.
-
-2 - Create a team for the Bot to run. If you have an existing team, you may skip this step and replace `team_name` with your existing team in subsequent steps.
 ```
-./bin/platform team create --name botsample --display_name "Sample Bot playground" --email "admin@example.com"
-```
-3 - Create the user account the Bot will run as.
-```
-./bin/platform user create --email="bot@example.com" --password="password1" --username="samplebot"
-```
-4 - Create a second user, `bill`, which we will use to log in and interact with the Bot.
-```
-./bin/platform user create --email="bill@example.com" --password="password1" --username="bill"
-```
-5 - (Optional) Give `bill` `system_admin` permissions.
-```
-./bin/platform roles system_admin bill
-```
-6 - Add users to the team
-```
-./bin/platform team add botsample samplebot bill
-```
-7 - Log in to [http://localhost:8065](http://localhost:8065) as `samplebot` and verify the e-mail address.
-8 - Log in to [http://localhost:8065](http://localhost:8065) as `bill` and verify the account was created successfully. Then, navigate to the `botsample` team you created in step 2 to interact with the Bot.
+switch action {
+case "offhook":
+	text = fmt.Sprintf("%s CONNECTED", user)
+	channel = dChannelId
+case "onhook":
+	text = fmt.Sprintf("%s DISCONNECTED", user)
+	channel = dChannelId
+}
 
-## Setup Bot Development Environment
-
-1 - Follow the [Developer Machine Setup](https://docs.mattermost.com/developer/dev-setup.html) instructions to setup the bot development environment.
-
-2 - Clone the GitHub repository to run the sample.
+mbothelper.SendMsgToChannel(text, "", channel)
 ```
-git clone https://github.com/mattermost/mattermost-bot-sample-golang.git
-cd mattermost-bot-sample-golang
+
+## Configuration
+
+`mbot` is configured through ``config/bot.toml``. `mbot` loads plugins.
+Plugins are either _handler_ or _watcher_. _handler_ react to http requests and post
+to channels, _watcher_ observe a channel and react to stuff written there.
+
+### General section
+
 ```
-3 - Start the Bot.
+[general]
+mattermost = "https://mattermost.example.com"
+wsurl = "wss://mattermost.example.com:443"
+listen = ":5678"
+botname = "Bender"
+useremail = "bender@example.com"
+username = "bender"
+userpassword = "bender1234"
+userlastname = "McSmithy"
+userfirstname = "Bender"
+teamname = "superteam"
+plugins_directory = "plugins/"
+plugins = "rtcrmapi_plugin.so sip_plugin.so"
 ```
-make run
+
+Most items are self-explanatory, the channels are define in their own section
+just as the `plugins` settings defines the shared objects to load.
+
 ```
-You can verify the Bot is running when 
-  - `Server detected and is running version 3.X.X` appears on the command line.
-  - `Mattermost Bot Sample has started running` is posted in the `Debugging For Sample Bot` channel.
+[channel]
+main = "town-square"
+log = "debug"
+status  = "status"
+```
 
-## Test the Bot
+Each shared object has its own cateogory:
 
-1 - Log in to the Mattermost server as `bill@example.com` and `password1.`
+```
+[sip_plugin.so]
+handler = "HandleRequest"
+watcher = "HandleChannelMessage"
+mention_handler = "HandleMention"
+help_handler = "HelpMe"
+channels = "ExtraChannel"
+path_patterns = "/sip/{action}/{user}/{number} /sip/{action}/{user}"
+plugin_config = "sip_plugin.toml"
+```
 
-2 - Join the `Debugging For Sample Bot` channel.
+## Functions
 
-3 - Post a message in the channel such as `are you running?` to see if the Bot responds. You should see a response similar to `Yes I'm running` if the Bot is running.
+A `mbot`-plugin can implement the following functions:
 
-## Stop the Bot
+* The handler - referenced in the `handler`-setting.
+* The watcher - referenced in the `watcher`-setting.
+* The mention Handler - referenced in the `mention_handler`-setting.
+* The help handler - referenced in the `help_handler`-setting.
 
-1 - In the terminal window, press `CTRL+C` to stop the bot. You should see `Mattermost Bot Sample has stopped running` posted in the `Debugging For Sample Bot` channel.
+A handler reacts to events from the outside (such as an http-request), while watcher observe
+mattermost channels and react to certain messages, such as mentions.
+
+### All Plugins
+
+* LoadConfig(configFile string)
+* SetChannels(mChannelIdString string, sChannelIdString string, dChannelIdString string)
+
+### _handler_
+
+* HandleRequest(rw http.ResponseWriter, req *http.Request)
+
+### _watcher_
+
+* HandleChannelMessage(event *model.WebSocketEvent, post *model.Post)
+
+The watcher handler as access to the complete `event` (which is a [WebSocketEvent](https://github.com/mattermost/mattermost-server/blob/master/model/websocket_message.go)
+from the mattermost model). To ease handling it
+is being passed a pointer to the `post` (see [post](https://github.com/mattermost/mattermost-server/blob/master/model/post.go)) directly.
+
+### _mention_handler_
+
+* HandleMention(event *model.WebSocketEvent, post *model.Post)
+
+The Mention handler as access to the complete `event` (which is a [WebSocketEvent](https://github.com/mattermost/mattermost-server/blob/master/model/websocket_message.go)
+from the mattermost model). To ease handling it
+is being passed a pointer to the `post` (see [post](https://github.com/mattermost/mattermost-server/blob/master/model/post.go)) directly.
+
+## _help_handler_
+
+* HandleHelp(userId string, message string)
+
+The userId the user being that asked for help, with the contents of the
+help inquery in the `message`.
+
+### channels
+
+In addtion to the debug, status as well as the lounge channel, each plugin can add addtional channels.
+This is done via a space-seperated list in the `channels`-setting.
+
+### Loading configs
+
+Each plugin can have their own config file. _If_ `plugin_config` is defined in the
+plugin section, this config file will be passed to `LoadConfigs` as a string, so that
+the plugin can do whatever it wants with it.
+

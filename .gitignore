@@ -32,3 +32,15 @@ Session.vim
 .agignore
 .ctags
 tags
+
+# ide files
+.idea
+
+# plugins dir
+plugins
+
+# binary
+mbot
+
+ # configs
+ config
